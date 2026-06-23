@@ -2,20 +2,6 @@ import { NextResponse } from 'next/server';
 import { createSupabaseClient, storageBucket } from '@/lib/supabase';
 import { transcribeAudio } from '@/lib/transcribe';
 import { extractTakeaways } from '@/lib/extractTakeaways';
-import { z } from 'zod';
-
-const sessionBodySchema = z.object({
-  session_date: z.string().optional(),
-  weapon: z.enum(['foil', 'epee', 'sabre']).nullable().optional(),
-  session_type: z.enum(['lesson', 'open_fencing', 'drills', 'competition', 'conditioning', 'other']).nullable().optional(),
-  duration_minutes: z.string().optional().transform((value) => {
-    if (!value || value === '') return undefined;
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : undefined;
-  }),
-  club: z.string().optional().nullable(),
-  coach: z.string().optional().nullable()
-});
 
 export async function POST(request: Request) {
   try {
@@ -24,14 +10,6 @@ export async function POST(request: Request) {
 
     if (!(file instanceof File)) {
       return NextResponse.json({ error: 'Missing audio file' }, { status: 400 });
-    }
-
-    const rawFields = Object.fromEntries(
-      Array.from(formData.entries()).filter(([key]) => key !== 'audio')
-    );
-    const parsed = sessionBodySchema.safeParse(rawFields);
-    if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid metadata', details: parsed.error.errors }, { status: 400 });
     }
 
     const supabase = createSupabaseClient();
@@ -54,12 +32,12 @@ export async function POST(request: Request) {
     const extracted = await extractTakeaways(transcript);
 
     const insertSession = await supabase.from('sessions').insert({
-      session_date: parsed.data.session_date ?? new Date().toISOString().slice(0, 10),
-      weapon: parsed.data.weapon ?? extracted.weapon,
-      session_type: parsed.data.session_type ?? extracted.session_type,
-      duration_minutes: parsed.data.duration_minutes ?? null,
-      club: parsed.data.club ?? null,
-      coach: parsed.data.coach ?? null,
+      session_date: new Date().toISOString().slice(0, 10),
+      weapon: null,
+      session_type: null,
+      duration_minutes: null,
+      club: null,
+      coach: null,
       audio_url: audioUrl,
       transcript,
       summary: extracted.summary
@@ -87,10 +65,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: created.error?.message ?? 'Failed to fetch session' }, { status: 500 });
     }
 
+    console.log('📋 Session created with response:', JSON.stringify(created.data, null, 2));
     return NextResponse.json(created.data);
   } catch (error: any) {
-    console.error('POST /api/sessions error', error);
-    return NextResponse.json({ error: error?.message ?? 'Unexpected server error' }, { status: 500 });
+    const errorMessage = error?.message ?? String(error) ?? 'Unexpected server error';
+    console.error('POST /api/sessions error:', errorMessage, error);
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 

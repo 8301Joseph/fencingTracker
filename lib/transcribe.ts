@@ -12,6 +12,7 @@ export async function transcribeAudio(fileBytes: ArrayBuffer, fileName: string):
   const blob = new Blob([fileBytes]);
   formData.append('file', blob, fileName);
   formData.append('model', 'whisper-1');
+  formData.append('language', 'en');
 
   const response = await fetch(OPENAI_TRANSCRIPTION_URL, {
     method: 'POST',

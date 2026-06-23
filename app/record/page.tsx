@@ -3,21 +3,12 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 
-const weapons = ['', 'foil', 'epee', 'sabre'];
-const sessionTypes = ['', 'lesson', 'open_fencing', 'drills', 'competition', 'conditioning', 'other'];
-
 type SubmitState = 'idle' | 'recording' | 'uploading' | 'complete';
 
 export default function RecordPage() {
   const [status, setStatus] = useState<SubmitState>('idle');
   const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
   const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
-  const [sessionDate, setSessionDate] = useState('');
-  const [weapon, setWeapon] = useState('');
-  const [sessionType, setSessionType] = useState('');
-  const [duration, setDuration] = useState('');
-  const [club, setClub] = useState('');
-  const [coach, setCoach] = useState('');
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -91,12 +82,6 @@ export default function RecordPage() {
 
     const data = new FormData();
     data.append('audio', recordingBlob, 'session.webm');
-    if (sessionDate) data.append('session_date', sessionDate);
-    if (weapon) data.append('weapon', weapon);
-    if (sessionType) data.append('session_type', sessionType);
-    if (duration) data.append('duration_minutes', duration);
-    if (club) data.append('club', club);
-    if (coach) data.append('coach', coach);
 
     try {
       const response = await fetch('/api/sessions', { method: 'POST', body: data });
@@ -126,84 +111,93 @@ export default function RecordPage() {
   };
 
   return (
-    <main>
-      <h1>Record Session</h1>
-      <nav style={{ marginBottom: '18px' }}>
-        <Link href="/">Home</Link> · <Link href="/history">History</Link>
+    <main style={{ maxWidth: 840, margin: '0 auto', padding: '24px', fontFamily: 'system-ui, sans-serif', color: '#111' }}>
+      <header style={{ marginBottom: '28px' }}>
+        <h1 style={{ margin: 0, fontSize: '2.4rem' }}>Training Tracker</h1>
+        <p style={{ margin: '12px 0 0', fontSize: '1rem', color: '#555', maxWidth: 680 }}>
+          Record a quick voice note after practice and auto-save the summary, transcript, and coaching takeaways.
+        </p>
+      </header>
+
+      <nav style={{ marginBottom: '24px', color: '#555' }}>
+        <Link href="/" style={{ color: '#0b5fff', textDecoration: 'none', marginRight: 16 }}>Home</Link>
+        <Link href="/history" style={{ color: '#0b5fff', textDecoration: 'none' }}>History</Link>
       </nav>
 
-      <section style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <button type="button" onClick={status === 'recording' ? stopRecording : startRecording}>
+      <section style={{ marginBottom: '24px', padding: '22px', border: '1px solid #e5e7eb', borderRadius: 18, boxShadow: '0 18px 40px rgba(15, 23, 42, 0.05)', background: '#fff' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={status === 'recording' ? stopRecording : startRecording}
+            style={{
+              padding: '14px 22px',
+              borderRadius: 14,
+              border: 'none',
+              background: status === 'recording' ? '#dc2626' : '#0b5fff',
+              color: '#fff',
+              fontSize: '1rem',
+              cursor: 'pointer'
+            }}
+          >
             {status === 'recording' ? 'Stop Recording' : 'Start Recording'}
           </button>
-          <span>{status === 'recording' ? `Recording… ${timer}s` : recordingUrl ? `Ready to submit (${timer}s)` : 'No recording yet'}</span>
+
+          <div style={{ minWidth: 180, color: '#374151', fontSize: '1rem' }}>
+            {status === 'recording'
+              ? `Recording… ${timer}s`
+              : recordingUrl
+              ? `Ready to submit (${timer}s)`
+              : 'Tap record and describe your session.'}
+          </div>
         </div>
 
         {recordingUrl ? (
-          <audio controls src={recordingUrl} style={{ marginTop: '12px', width: '100%' }} />
-        ) : null}
+          <audio controls src={recordingUrl} style={{ marginTop: 18, width: '100%' }} />
+        ) : (
+          <p style={{ marginTop: 18, color: '#6b7280' }}>
+            Start recording, speak your training notes, then stop and submit. The app will save the current date automatically.
+          </p>
+        )}
       </section>
 
-      <section style={{ marginBottom: '24px' }}>
-        <h2>Session details</h2>
-        <label>
-          Date
-          <input type="date" value={sessionDate} onChange={(event) => setSessionDate(event.target.value)} />
-        </label>
-        <label>
-          Weapon
-          <select value={weapon} onChange={(event) => setWeapon(event.target.value)}>
-            {weapons.map((option) => (
-              <option key={option} value={option}>{option || 'Choose weapon'}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Session type
-          <select value={sessionType} onChange={(event) => setSessionType(event.target.value)}>
-            {sessionTypes.map((option) => (
-              <option key={option} value={option}>{option || 'Choose session type'}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Duration (minutes)
-          <input type="number" min="1" value={duration} onChange={(event) => setDuration(event.target.value)} />
-        </label>
-        <label>
-          Club
-          <input value={club} onChange={(event) => setClub(event.target.value)} placeholder="Optional" />
-        </label>
-        <label>
-          Coach
-          <input value={coach} onChange={(event) => setCoach(event.target.value)} placeholder="Optional" />
-        </label>
-      </section>
-
-      <button type="button" onClick={submitSession} disabled={status === 'uploading' || status === 'recording'}>
-        {status === 'uploading' ? 'Submitting…' : 'Submit Session'}
+      <button
+        type="button"
+        onClick={submitSession}
+        disabled={status === 'uploading' || status === 'recording' || !recordingBlob}
+        style={{
+          padding: '14px 24px',
+          borderRadius: 14,
+          border: 'none',
+          background: '#10b981',
+          color: '#fff',
+          fontSize: '1rem',
+          cursor: status === 'uploading' || status === 'recording' || !recordingBlob ? 'not-allowed' : 'pointer',
+          opacity: status === 'uploading' || status === 'recording' || !recordingBlob ? 0.65 : 1
+        }}
+      >
+        {status === 'uploading' ? 'Submitting…' : 'Save Session'}
       </button>
+
       {error ? (
-        <div style={{ marginTop: 12 }}>
-          <p style={{ color: 'red' }}>{error}</p>
-          <div style={{ display: 'flex', gap: '8px', marginTop: 8 }}>
-            <button type="button" onClick={() => { setError(null); startRecording(); }}>
-              Retry permission
+        <div style={{ marginTop: 20, padding: '18px', borderRadius: 14, background: '#fef3f2', border: '1px solid #fecaca', color: '#b91c1c' }}>
+          <p style={{ margin: 0, fontWeight: 600 }}>Error</p>
+          <p style={{ margin: '10px 0 0' }}>{error}</p>
+          <div style={{ display: 'flex', gap: '10px', marginTop: 14, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => { setError(null); startRecording(); }}
+              style={{ padding: '10px 16px', borderRadius: 12, border: '1px solid #b91c1c', background: '#fff', color: '#b91c1c', cursor: 'pointer' }}
+            >
+              Retry
             </button>
-            <button type="button" onClick={() => window.location.reload()}>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              style={{ padding: '10px 16px', borderRadius: 12, border: '1px solid #fca5a5', background: '#fef2f2', color: '#981b1b', cursor: 'pointer' }}
+            >
               Reload page
             </button>
           </div>
-          <details style={{ marginTop: 8 }}>
-            <summary style={{ cursor: 'pointer' }}>Permission help</summary>
-            <ol style={{ marginTop: 8 }}>
-              <li>Allow the microphone in the browser prompt when asked.</li>
-              <li>If you blocked it, click the lock icon in the address bar → Site settings → Microphone → Allow.</li>
-              <li>On macOS: System Settings → Privacy & Security → Microphone → enable your browser.</li>
-              <li>After changing settings, click <strong>Reload page</strong> then <strong>Retry permission</strong>.</li>
-            </ol>
-          </details>
         </div>
       ) : null}
 

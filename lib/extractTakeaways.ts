@@ -20,14 +20,12 @@ Rules:
 - Sort each takeaway into exactly one category from the allowed list.
 - Mark anything the fencer should do before/at the next session as an action item.
 - Flag any mention of pain, soreness, strain, or injury under "injury".
-- Infer weapon and session_type only if clearly stated or strongly implied; otherwise use null.
+- Do not infer weapon, session_type, or any metadata fields.
 
 Return ONLY valid JSON matching this schema, with no markdown fences and no text before or after:
 
 {
   "summary": string,
-  "weapon": "foil" | "epee" | "sabre" | null,
-  "session_type": "lesson" | "open_fencing" | "drills" | "competition" | "conditioning" | "other" | null,
   "takeaways": [
     {
       "category": "technique" | "footwork" | "tactics" | "bouts" | "conditioning" | "mental" | "coach_feedback" | "action_item" | "injury",
@@ -39,17 +37,29 @@ Return ONLY valid JSON matching this schema, with no markdown fences and no text
 
 Transcript:\n${transcript}`;
 
-  const response = await client.completions.create({
+  const response = await client.messages.create({
     model: CLAUDE_MODEL,
-    prompt,
-    max_tokens_to_sample: 1200
+    max_tokens: 1200,
+    messages: [
+      {
+        role: 'user',
+        content: prompt
+      }
+    ]
   });
 
-  if (!response || !response.completion) {
+  if (!response || !response.content || response.content.length === 0) {
     throw new Error('Claude returned an empty response');
   }
 
-  const completedText = response.completion;
+  const completedText = response.content[0].type === 'text' ? response.content[0].text : '';
+  const parsed = await parseClaudeResponse(completedText);
 
-  return parseClaudeResponse(completedText);
+  // Always set metadata fields to null
+  return {
+    summary: parsed.summary,
+    weapon: null,
+    session_type: null,
+    takeaways: parsed.takeaways
+  };
 }

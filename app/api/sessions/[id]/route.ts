@@ -13,3 +13,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
   return NextResponse.json(result.data);
 }
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const supabase = createSupabaseClient();
+  const { id } = await params;
+
+  const result = await supabase.from('sessions').delete().eq('id', id);
+  if (result.error) {
+    return NextResponse.json({ error: result.error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}
