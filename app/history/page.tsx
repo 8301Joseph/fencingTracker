@@ -1,13 +1,26 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { getAuthState, logout } from '@/lib/authUtils';
 
 export default function HistoryPage() {
+  const router = useRouter();
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<'Joseph' | 'Sophia' | null>(null);
+
+  useEffect(() => {
+    const auth = getAuthState();
+    if (!auth.isAuthenticated) {
+      router.push('/login');
+    } else {
+      setCurrentUser(auth.user);
+    }
+  }, [router]);
 
   const fetchSessions = async () => {
     setLoading(true);
@@ -64,8 +77,30 @@ export default function HistoryPage() {
           </p>
         </header>
 
-        <nav style={{ marginBottom: '32px', color: '#555' }}>
+        <nav style={{ marginBottom: '32px', color: '#555', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Link href="/" style={{ color: '#0b5fff', textDecoration: 'none', marginRight: 20, fontWeight: 500 }}>← Back Home</Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {currentUser && <span style={{ fontSize: '0.9rem', color: '#666' }}>Logged in as <strong>{currentUser}</strong></span>}
+            <button
+              type="button"
+              onClick={() => {
+                logout();
+                router.push('/login');
+              }}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: '1px solid #e5e7eb',
+                background: '#fff',
+                color: '#666',
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                fontWeight: 500
+              }}
+            >
+              Logout
+            </button>
+          </div>
         </nav>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, gap: '12px', flexWrap: 'wrap' }}>

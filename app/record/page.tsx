@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { getAuthState, logout } from '@/lib/authUtils';
 
 type SubmitState = 'idle' | 'recording' | 'uploading' | 'complete';
 
 export default function RecordPage() {
+  const router = useRouter();
   const [status, setStatus] = useState<SubmitState>('idle');
   const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
   const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
@@ -15,6 +18,16 @@ export default function RecordPage() {
   const chunksRef = useRef<Blob[]>([]);
   const [timer, setTimer] = useState(0);
   const timerIdRef = useRef<number | null>(null);
+  const [currentUser, setCurrentUser] = useState<'Joseph' | 'Sophia' | null>(null);
+
+  useEffect(() => {
+    const auth = getAuthState();
+    if (!auth.isAuthenticated) {
+      router.push('/login');
+    } else {
+      setCurrentUser(auth.user);
+    }
+  }, [router]);
 
   useEffect(() => {
     return () => {
@@ -119,9 +132,33 @@ export default function RecordPage() {
         </p>
       </header>
 
-      <nav style={{ marginBottom: '24px', color: '#555' }}>
-        <Link href="/" style={{ color: '#0b5fff', textDecoration: 'none', marginRight: 16 }}>Home</Link>
-        <Link href="/history" style={{ color: '#0b5fff', textDecoration: 'none' }}>History</Link>
+      <nav style={{ marginBottom: '24px', color: '#555', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '16px' }}>
+          <Link href="/" style={{ color: '#0b5fff', textDecoration: 'none' }}>Home</Link>
+          <Link href="/history" style={{ color: '#0b5fff', textDecoration: 'none' }}>History</Link>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {currentUser && <span style={{ fontSize: '0.9rem', color: '#666' }}>Logged in as <strong>{currentUser}</strong></span>}
+          <button
+            type="button"
+            onClick={() => {
+              logout();
+              router.push('/login');
+            }}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '8px',
+              border: '1px solid #e5e7eb',
+              background: '#fff',
+              color: '#666',
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              fontWeight: 500
+            }}
+          >
+            Logout
+          </button>
+        </div>
       </nav>
 
       <section style={{ marginBottom: '24px', padding: '22px', border: '1px solid #e5e7eb', borderRadius: 18, boxShadow: '0 18px 40px rgba(15, 23, 42, 0.05)', background: '#fff' }}>

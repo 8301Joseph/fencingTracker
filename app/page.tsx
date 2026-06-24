@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { getAuthState, logout } from '@/lib/authUtils';
 
 type SubmitState = 'idle' | 'recording' | 'uploading' | 'complete';
 
 export default function HomePage() {
+  const router = useRouter();
   const [status, setStatus] = useState<SubmitState>('idle');
   const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
   const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
@@ -15,6 +18,16 @@ export default function HomePage() {
   const chunksRef = useRef<Blob[]>([]);
   const [timer, setTimer] = useState(0);
   const timerIdRef = useRef<number | null>(null);
+  const [currentUser, setCurrentUser] = useState<'Joseph' | 'Sophia' | null>(null);
+
+  useEffect(() => {
+    const auth = getAuthState();
+    if (!auth.isAuthenticated) {
+      router.push('/login');
+    } else {
+      setCurrentUser(auth.user);
+    }
+  }, [router]);
 
   useEffect(() => {
     return () => {
@@ -123,8 +136,30 @@ export default function HomePage() {
         </header>
 
         {/* Quick nav */}
-        <nav style={{ marginBottom: '40px', textAlign: 'center' }}>
+        <nav style={{ marginBottom: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Link href="/history" style={{ color: '#0b5fff', textDecoration: 'none', fontSize: '1rem', fontWeight: 500 }}>View History</Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {currentUser && <span style={{ fontSize: '0.9rem', color: '#666' }}>Logged in as <strong>{currentUser}</strong></span>}
+            <button
+              type="button"
+              onClick={() => {
+                logout();
+                router.push('/login');
+              }}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: '1px solid #e5e7eb',
+                background: '#fff',
+                color: '#666',
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                fontWeight: 500
+              }}
+            >
+              Logout
+            </button>
+          </div>
         </nav>
 
         {/* Recording Section */}

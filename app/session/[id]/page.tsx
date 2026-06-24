@@ -1,15 +1,27 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { getAuthState, logout } from '@/lib/authUtils';
 
 export default function SessionDetailPage() {
+  const router = useRouter();
   const params = useParams();
   const sessionId = params?.id;
   const [session, setSession] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [currentUser, setCurrentUser] = useState<'Joseph' | 'Sophia' | null>(null);
+
+  useEffect(() => {
+    const auth = getAuthState();
+    if (!auth.isAuthenticated) {
+      router.push('/login');
+    } else {
+      setCurrentUser(auth.user);
+    }
+  }, [router]);
 
   useEffect(() => {
     if (!sessionId) return;
