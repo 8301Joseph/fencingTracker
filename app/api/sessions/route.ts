@@ -5,6 +5,13 @@ import { extractTakeaways } from '@/lib/extractTakeaways';
 
 export async function POST(request: Request) {
   try {
+    const url = new URL(request.url);
+    const user = url.searchParams.get('user') as 'Joseph' | 'Sophia' | null;
+
+    if (!user || !['Joseph', 'Sophia'].includes(user)) {
+      return NextResponse.json({ error: 'Missing or invalid user' }, { status: 400 });
+    }
+
     const formData = await request.formData();
     const file = formData.get('audio');
 
@@ -32,6 +39,7 @@ export async function POST(request: Request) {
     const extracted = await extractTakeaways(transcript);
 
     const insertSession = await supabase.from('sessions').insert({
+      user_name: user,
       session_date: new Date().toISOString().slice(0, 10),
       weapon: null,
       session_type: null,
@@ -76,13 +84,19 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
+  const user = url.searchParams.get('user') as 'Joseph' | 'Sophia' | null;
   const weapon = url.searchParams.get('weapon');
   const sessionType = url.searchParams.get('session_type');
   const startDate = url.searchParams.get('start_date');
   const endDate = url.searchParams.get('end_date');
+
+  if (!user || !['Joseph', 'Sophia'].includes(user)) {
+    return NextResponse.json({ error: 'Missing or invalid user' }, { status: 400 });
+  }
+
   const supabase = createSupabaseClient();
 
-  let query = supabase.from('sessions').select('*, takeaways(*)').order('session_date', { ascending: false });
+  let query = supabase.from('sessions').select('*, takeaways(*)').eq('user_name', user).order('session_date', { ascending: false });
 
   if (weapon) {
     query = query.eq('weapon', weapon);

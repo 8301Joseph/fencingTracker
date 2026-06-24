@@ -27,7 +27,7 @@ export default function HistoryPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/sessions');
+      const response = await fetch(`/api/sessions?user=${encodeURIComponent(currentUser || '')}`);
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || 'Unable to load sessions');
@@ -50,7 +50,7 @@ export default function HistoryPage() {
     setDeletingId(id);
 
     try {
-      const response = await fetch(`/api/sessions/${id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/sessions/${id}?user=${encodeURIComponent(currentUser || '')}`, { method: 'DELETE' });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || 'Unable to delete session');

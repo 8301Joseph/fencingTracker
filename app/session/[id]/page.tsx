@@ -25,7 +25,7 @@ export default function SessionDetailPage() {
 
   useEffect(() => {
     if (!sessionId) return;
-    fetch(`/api/sessions/${sessionId}`)
+    fetch(`/api/sessions/${sessionId}?user=${encodeURIComponent(currentUser || '')}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.error) {
@@ -35,7 +35,7 @@ export default function SessionDetailPage() {
         }
       })
       .catch((err) => setError(err.message));
-  }, [sessionId]);
+  }, [sessionId, currentUser]);
 
   const toggleCompleted = async (takeaway: any) => {
     setSaving(true);

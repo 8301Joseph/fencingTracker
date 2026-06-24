@@ -1,6 +1,7 @@
 -- Create the sessions table
 create table if not exists sessions (
   id uuid primary key default gen_random_uuid(),
+  user_name text not null check (user_name in ('Joseph', 'Sophia')),
   session_date date not null default current_date,
   weapon text check (weapon in ('foil','epee','sabre')),
   session_type text check (session_type in ('lesson','open_fencing','drills','competition','conditioning','other')),
@@ -12,6 +13,8 @@ create table if not exists sessions (
   summary text,
   created_at timestamptz default now()
 );
+
+create index if not exists idx_sessions_user_name on sessions (user_name);
 
 create table if not exists takeaways (
   id uuid primary key default gen_random_uuid(),

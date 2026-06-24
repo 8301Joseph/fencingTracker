@@ -27,6 +27,7 @@ export interface ExtractedSession {
 
 export interface SessionRow {
   id: string;
+  user_name: 'Joseph' | 'Sophia';
   session_date: string;
   weapon: Weapon | null;
   session_type: SessionType | null;

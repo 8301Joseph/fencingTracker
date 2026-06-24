@@ -90,6 +90,11 @@ export default function HomePage() {
       return;
     }
 
+    if (!currentUser) {
+      setError('Not logged in.');
+      return;
+    }
+
     setStatus('uploading');
     setError(null);
 
@@ -97,7 +102,7 @@ export default function HomePage() {
     data.append('audio', recordingBlob, 'session.webm');
 
     try {
-      const response = await fetch('/api/sessions', { method: 'POST', body: data });
+      const response = await fetch(`/api/sessions?user=${encodeURIComponent(currentUser)}`, { method: 'POST', body: data });
       const rawText = await response.text();
       let payload: any = null;
 
